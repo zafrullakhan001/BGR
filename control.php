@@ -18,7 +18,7 @@ header('X-Frame-Options: DENY');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: same-origin');
 header('Cache-Control: no-store');
-header("Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; frame-ancestors 'none'; form-action 'self'");
+header("Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; frame-ancestors 'none'; form-action 'self'");
 
 function h(string $s): string
 {
@@ -228,7 +228,7 @@ $sizeSlider = static function (string $key, string $label, string $var) use ($br
     <title>Control panel · <?= h($brand['name']) ?></title>
     <script src="assets/theme.js?v=<?= $v('theme.js') ?>"></script>
     <script src="assets/control.js?v=<?= $v('control.js') ?>" defer></script>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap">
+    <link rel="stylesheet" href="assets/fonts/fonts.css?v=<?= $v('fonts/fonts.css') ?>">
     <link rel="stylesheet" href="assets/app.css?v=<?= $v('app.css') ?>">
     <?php if ($brand['accent'] !== ''): ?><style>:root { --magenta: <?= h($brand['accent']) ?>; }</style><?php endif ?>
     <style>

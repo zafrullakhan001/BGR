@@ -23,8 +23,7 @@ $fonts = ['Plus Jakarta Sans', 'Oswald', 'Playfair Display', 'Caveat', 'Arial', 
     <title><?= $h($brand['name']) ?></title>
     <?php if ($logo): ?><link rel="icon" href="<?= $h($logo) ?>"><?php endif ?>
     <script src="assets/theme.js?v=<?= $v('theme.js') ?>"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&family=Oswald:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Caveat:wght@400;700&display=swap">
+    <link rel="stylesheet" href="assets/fonts/fonts.css?v=<?= $v('fonts/fonts.css') ?>">
     <link rel="stylesheet" href="assets/app.css?v=<?= $v('app.css') ?>">
     <?php if ($brand['accent'] !== ''): ?><style>:root { --magenta: <?= $h($brand['accent']) ?>; }</style><?php endif ?>
 </head>

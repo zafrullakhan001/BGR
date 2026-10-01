@@ -5,7 +5,7 @@ declare(strict_types=1);
 final class Updater
 {
     private const ROOT = __DIR__ . '/..';
-    private const ALLOW_FILES = ['index.php', 'process.php', 'brand.php', 'control.php'];
+    private const ALLOW_FILES = ['index.php', 'process.php', 'brand.php', 'control.php', '.user.ini', 'web.config'];
     private const ALLOW_DIRS = ['lib/', 'assets/'];
     private const INFO = self::ROOT . '/BUILD_INFO.json';
     private const BACKUP = Store::DIR . '/backup/last';
