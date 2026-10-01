@@ -1,10 +1,15 @@
 <?php
 declare(strict_types=1);
 
+require __DIR__ . '/lib/Store.php';
+
 session_start();
 $_SESSION['csrf'] ??= bin2hex(random_bytes(32));
 $csrf = htmlspecialchars($_SESSION['csrf'], ENT_QUOTES);
 $v = static fn (string $f): int => filemtime(__DIR__ . '/assets/' . $f);
+$h = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+$brand = Store::brand();
+$logo = $brand['logo'] !== '' ? 'brand.php?v=' . (int) @filemtime(Store::DIR . '/branding/' . $brand['logo']) : '';
 $fonts = ['Plus Jakarta Sans', 'Oswald', 'Playfair Display', 'Caveat', 'Arial', 'Segoe UI', 'Calibri', 'Verdana',
     'Georgia', 'Times New Roman', 'Courier New', 'Impact'];
 ?>
@@ -14,11 +19,13 @@ $fonts = ['Plus Jakarta Sans', 'Oswald', 'Playfair Display', 'Caveat', 'Arial', 
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf" content="<?= $csrf ?>">
-    <title>Picture desk</title>
+    <title><?= $h($brand['name']) ?></title>
+    <?php if ($logo): ?><link rel="icon" href="<?= $h($logo) ?>"><?php endif ?>
     <script src="assets/theme.js?v=<?= $v('theme.js') ?>"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&family=Oswald:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Caveat:wght@400;700&display=swap">
     <link rel="stylesheet" href="assets/app.css?v=<?= $v('app.css') ?>">
+    <?php if ($brand['accent'] !== ''): ?><style>:root { --magenta: <?= $h($brand['accent']) ?>; }</style><?php endif ?>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -48,20 +55,25 @@ $fonts = ['Plus Jakarta Sans', 'Oswald', 'Playfair Display', 'Caveat', 'Arial', 
         <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
         <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
         <symbol id="i-dropper" viewBox="0 0 24 24"><path d="m14 6 4 4M3 21l2-.5L16 9.5 14.5 8 3.5 19z"/><path d="m13 5 2.6-2.6a2 2 0 0 1 2.8 0l3.2 3.2a2 2 0 0 1 0 2.8L19 11"/></symbol>
+        <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
         <symbol id="i-logo" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><rect x="12" y="12" width="6" height="6" rx="1"/><path d="M7 7h6M7 10h3"/></symbol>
     </defs>
 </svg>
 
 <div class="desk">
     <aside class="block">
-        <header class="title">
-            <div>
-                <h1>Picture desk</h1>
-                <p>Clean up photos, drawings and app icons.</p>
+        <header class="title" style="--logo-h: <?= $brand['logo_size'] ?>px; --title-size: <?= $brand['title_size'] ?>px; --tagline-size: <?= $brand['tagline_size'] ?>px">
+            <?php if ($logo): ?><img class="brand-logo<?= $brand['logo_plate'] ? '' : ' plain' ?>" src="<?= $h($logo) ?>" alt=""><?php endif ?>
+            <div class="brand-text">
+                <h1><?= $h($brand['name']) ?></h1>
+                <?php if ($brand['tagline'] !== ''): ?><p><?= $h($brand['tagline']) ?></p><?php endif ?>
             </div>
-            <button type="button" class="theme-toggle" id="theme" aria-label="Switch to day mode" title="Day / night">
-                <svg class="moon"><use href="#i-moon"/></svg><svg class="sun"><use href="#i-sun"/></svg>
-            </button>
+            <div class="title-actions">
+                <button type="button" class="theme-toggle" id="theme" aria-label="Switch to day mode" title="Day / night">
+                    <svg class="moon"><use href="#i-moon"/></svg><svg class="sun"><use href="#i-sun"/></svg>
+                </button>
+                <a class="settings-link" href="control.php" aria-label="Control panel" title="Control panel"><svg><use href="#i-gear"/></svg></a>
+            </div>
         </header>
 
         <section class="cell sec-image">
@@ -257,9 +269,17 @@ $fonts = ['Plus Jakarta Sans', 'Oswald', 'Playfair Display', 'Caveat', 'Arial', 
             <img id="img" alt="Working image">
             <canvas id="overlay" aria-label="Text and watermark layer"></canvas>
         </figure>
+        <div class="zoom-bar">
+            <label class="slider zoom">
+                <span>Zoom <output id="zoomOut">100%</output></span>
+                <input type="range" id="zoom" min="50" max="400" step="10" value="100" aria-label="Zoom">
+            </label>
+            <button type="button" class="btn" id="zoomReset" title="Back to 100% and centred">Fit</button>
+        </div>
     </main>
 </div>
 <script src="assets/overlay.js?v=<?= $v('overlay.js') ?>"></script>
 <script src="assets/app.js?v=<?= $v('app.js') ?>"></script>
+<script src="assets/zoom.js?v=<?= $v('zoom.js') ?>"></script>
 </body>
 </html>

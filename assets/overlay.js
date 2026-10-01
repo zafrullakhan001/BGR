@@ -345,7 +345,7 @@ window.Overlay = (() => {
         if (picker) return;
         const [px, py] = pointer(e);
         if (!drag) {
-            canvas.style.cursor = onHandle(px, py) ? 'nwse-resize' : hit(px, py) ? 'move' : 'default';
+            canvas.style.cursor = onHandle(px, py) ? 'nwse-resize' : hit(px, py) ? 'move' : '';
             return;
         }
         const it = drag.it;
@@ -395,7 +395,7 @@ window.Overlay = (() => {
         /** fn(x, y) gets the clicked spot as 0–1 fractions of the picture; null turns picking off. */
         setPicker: (fn) => {
             picker = fn;
-            canvas.style.cursor = fn ? 'crosshair' : 'default';
+            canvas.style.cursor = fn ? 'crosshair' : '';
         },
     };
 })();

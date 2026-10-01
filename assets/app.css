@@ -102,23 +102,60 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
     scroll-padding-bottom: 72px;
 }
 .title {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "text actions";
+    align-items: start;
+    gap: 16px 12px;
     padding: 24px 20px 18px;
 }
+.title:has(.brand-logo) { grid-template-areas: "logo actions" "text text"; align-items: center; }
 .title h1 {
-    font-size: 1.75rem;
+    font-size: var(--title-size, 1.75rem);
     font-weight: 700;
+    line-height: 1.15;
     letter-spacing: -0.02em;
+    text-wrap: balance;
     background: linear-gradient(90deg, var(--amber), var(--coral) 40%, var(--magenta) 70%, var(--violet));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
 }
 [data-theme="light"] .title h1 { background-image: linear-gradient(90deg, var(--coral), var(--magenta) 50%, var(--violet)); }
-.title p { margin-top: 4px; color: var(--muted); font-size: 0.92rem; }
+.title p { margin-top: 6px; color: var(--muted); font-size: var(--tagline-size, 0.92rem); line-height: 1.4; text-wrap: pretty; }
+.brand-text { grid-area: text; min-width: 0; overflow-wrap: break-word; }
+/* White plate keeps dark or coloured logos readable in night mode. */
+.brand-logo {
+    grid-area: logo;
+    justify-self: start;
+    display: block;
+    box-sizing: content-box;
+    height: var(--logo-h, 38px);
+    width: auto;
+    max-width: calc(100% - 20px);
+    object-fit: contain;
+    object-position: left center;
+    padding: 7px 10px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 6px 18px -10px rgba(0, 0, 0, 0.35);
+}
+.brand-logo.plain { max-width: 100%; padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; }
+.title-actions { grid-area: actions; display: flex; align-items: center; gap: 8px; }
+.settings-link {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--btn);
+}
+.settings-link:hover { color: var(--text); background: var(--btn-hover); }
+.settings-link:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.settings-link svg { width: 16px; height: 16px; }
 
 .theme-toggle {
     position: relative;
@@ -512,6 +549,30 @@ h3 { margin: 0; font-size: 0.88rem; font-weight: 600; }
     height: 100%;
     touch-action: none;
 }
+.view { transform-origin: center; will-change: transform; }
+.stage { overflow: hidden; }
+.stage.zoomed .view canvas { cursor: grab; }
+.stage.panning .view canvas { cursor: grabbing; }
+
+.zoom-bar {
+    position: absolute;
+    left: 50%;
+    bottom: 14px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: min(360px, calc(100% - 32px));
+    padding: 8px 10px 8px 16px;
+    background: var(--panel-solid);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+.zoom-bar .slider { flex: 1; font-size: 0.82rem; }
+.view[hidden] ~ .zoom-bar { display: none; }
+.slider.zoom { --track: linear-gradient(90deg, var(--sky), var(--violet), var(--magenta)); }
 
 @media (max-width: 860px) {
     .desk { grid-template-columns: 1fr; }

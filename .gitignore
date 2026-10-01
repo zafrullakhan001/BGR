@@ -1,6 +1,14 @@
 # Upload scratch space
 storage/tmp/
 
+# Local settings, secrets and update backups
+storage/app.sqlite*
+storage/.encryption_key
+storage/branding/
+storage/backup/
+storage/update.lock
+BUILD_INFO.json
+
 # OS junk
 Thumbs.db
 Desktop.ini
