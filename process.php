@@ -3,12 +3,13 @@ declare(strict_types=1);
 
 require __DIR__ . '/lib/ImageEditor.php';
 require __DIR__ . '/lib/IconPack.php';
+require __DIR__ . '/lib/session.php';
 
 const MAX_BYTES = 30 * 1024 * 1024;
 const MAX_PIXELS = 40_000_000;
 const TMP_DIR = __DIR__ . '/storage/tmp';
 
-session_start();
+app_session();
 session_write_close();
 set_time_limit(300);
 ini_set('memory_limit', '1024M');
@@ -24,12 +25,19 @@ function fail(int $code, string $message): never
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     fail(405, 'Use the form on the page.');
 }
+if ($_POST === [] && $_FILES === [] && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+    fail(413, 'The server discarded the picture before PHP could read it. Raise post_max_size and upload_max_filesize above 32 MB.');
+}
 if (!hash_equals($_SESSION['csrf'] ?? '', (string) ($_POST['csrf'] ?? ''))) {
     fail(403, 'Your session expired. Reload the page and try again.');
 }
 
 $file = $_FILES['image'] ?? null;
-if (!$file || $file['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
+$uploadError = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
+if ($uploadError === UPLOAD_ERR_INI_SIZE || $uploadError === UPLOAD_ERR_FORM_SIZE) {
+    fail(413, 'The picture is larger than this server allows. Raise upload_max_filesize above 32 MB.');
+}
+if (!$file || $uploadError !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
     fail(400, 'The picture did not upload. Try again.');
 }
 if ($file['size'] > MAX_BYTES) {

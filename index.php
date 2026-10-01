@@ -2,8 +2,9 @@
 declare(strict_types=1);
 
 require __DIR__ . '/lib/Store.php';
+require __DIR__ . '/lib/session.php';
 
-session_start();
+app_session();
 $_SESSION['csrf'] ??= bin2hex(random_bytes(32));
 $csrf = htmlspecialchars($_SESSION['csrf'], ENT_QUOTES);
 $v = static fn (string $f): int => filemtime(__DIR__ . '/assets/' . $f);

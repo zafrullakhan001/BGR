@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/lib/Store.php';
 require __DIR__ . '/lib/Updater.php';
+require __DIR__ . '/lib/session.php';
 
 const MAX_FAILS = 5;
 const LOCK_SECONDS = 60;
@@ -10,8 +11,7 @@ const IDLE_SECONDS = 1800;
 const LOGO_TYPES = ['image/png' => 'png', 'image/jpeg' => 'jpg', 'image/webp' => 'webp', 'image/gif' => 'gif'];
 const LOGO_DIR = Store::DIR . '/branding';
 
-session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax', 'secure' => !empty($_SERVER['HTTPS'])]);
-session_start();
+app_session();
 $_SESSION['csrf'] ??= bin2hex(random_bytes(32));
 
 header('X-Frame-Options: DENY');

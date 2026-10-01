@@ -282,7 +282,8 @@
         const body = new FormData();
         body.append('csrf', csrf);
         body.append('op', op);
-        body.append('image', current().blob, 'image');
+        const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/bmp': 'bmp' }[current().blob.type] || 'png';
+        body.append('image', current().blob, `picture.${ext}`);
         body.append('brightness', brightness.value);
         body.append('contrast', contrast.value);
         body.append('sharpness', sharpness.value);
@@ -305,8 +306,15 @@
         try {
             const res = await fetch('process.php', { method: 'POST', body });
             if (!res.ok) {
-                const err = await res.json().catch(() => ({ error: `Server error ${res.status}.` }));
-                throw new Error(err.error);
+                const text = await res.text();
+                let message = `Server error ${res.status}.`;
+                try {
+                    const err = JSON.parse(text);
+                    if (err && err.error) message = err.error;
+                } catch {
+                    if (res.status === 403) message = 'The web server refused the upload (403).';
+                }
+                throw new Error(message);
             }
             const blob = await res.blob();
             if (source !== state.steps[0]) return;

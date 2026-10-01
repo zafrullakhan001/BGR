@@ -1,5 +1,6 @@
 # Upload scratch space
 storage/tmp/
+storage/sessions/
 
 # Local model files are too large for GitHub (100 MB limit)
 storage/models/
