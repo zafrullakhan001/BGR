@@ -1,6 +1,9 @@
 # Upload scratch space
 storage/tmp/
 
+# Local model files are too large for GitHub (100 MB limit)
+storage/models/
+
 # Local settings, secrets and update backups
 storage/app.sqlite*
 storage/.encryption_key
