@@ -16,6 +16,9 @@ BUILD_INFO.json
 # Unused sample pictures
 _fixtures/
 
+# Composer
+/vendor/
+
 # OS junk
 Thumbs.db
 Desktop.ini
