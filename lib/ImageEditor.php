@@ -210,8 +210,30 @@ final class ImageEditor
         return $hex === null ? $this : $this->removeColor($hex, $tolerance, true);
     }
 
-    /** Makes matching pixels transparent. $edgesOnly keeps enclosed areas of that colour. */
-    public function removeColor(string $hex, int $tolerance, bool $edgesOnly): self
+    /**
+     * Removes the connected area under a clicked spot. The colour is sampled from that spot.
+     * $fx and $fy are 0–1 fractions of the picture width and height.
+     */
+    public function removeWand(float $fx, float $fy, int $tolerance): self
+    {
+        $img = $this->gd();
+        $w = imagesx($img);
+        $h = imagesy($img);
+        if ($w < 1 || $h < 1) {
+            return $this;
+        }
+        $sx = min($w - 1, max(0, (int) floor(max(0, min(1, $fx)) * $w)));
+        $sy = min($h - 1, max(0, (int) floor(max(0, min(1, $fy)) * $h)));
+        $c = imagecolorat($img, $sx, $sy);
+        if ((($c >> 24) & 0x7F) > 100) {
+            throw new RuntimeException('That spot is already transparent. Click the colour to remove.');
+        }
+        $hex = sprintf('#%02x%02x%02x', ($c >> 16) & 0xFF, ($c >> 8) & 0xFF, $c & 0xFF);
+        return $this->removeColor($hex, $tolerance, true, $sx, $sy);
+    }
+
+    /** Makes matching pixels transparent. $edgesOnly keeps enclosed areas of that colour. A seed limits the flood to the area connected to that pixel. */
+    public function removeColor(string $hex, int $tolerance, bool $edgesOnly, ?int $seedX = null, ?int $seedY = null): self
     {
         $rgb = sscanf($hex, '#%02x%02x%02x');
         if (!is_array($rgb) || count($rgb) !== 3) {
@@ -238,7 +260,11 @@ final class ImageEditor
             }
         }
 
-        if ($edgesOnly) {
+        $fromSeed = $seedX !== null && $seedY !== null;
+        if ($fromSeed && ($seedX < 0 || $seedY < 0 || $seedX >= $w || $seedY >= $h)) {
+            throw new RuntimeException('Click on the picture.');
+        }
+        if ($edgesOnly || $fromSeed) {
             $queue = [];
             $head = 0;
             $mark = static function (int $i) use (&$state, &$queue): void {
@@ -247,13 +273,18 @@ final class ImageEditor
                     $queue[] = $i;
                 }
             };
-            for ($x = 0; $x < $w; $x++) {
-                $mark($x);
-                $mark(($h - 1) * $w + $x);
-            }
-            for ($y = 1; $y < $h - 1; $y++) {
-                $mark($y * $w);
-                $mark($y * $w + $w - 1);
+            if ($fromSeed) {
+                $state[$seedY * $w + $seedX] = "\1";
+                $mark($seedY * $w + $seedX);
+            } else {
+                for ($x = 0; $x < $w; $x++) {
+                    $mark($x);
+                    $mark(($h - 1) * $w + $x);
+                }
+                for ($y = 1; $y < $h - 1; $y++) {
+                    $mark($y * $w);
+                    $mark($y * $w + $w - 1);
+                }
             }
             while ($head < count($queue)) {
                 if ($head >= 65536) {
@@ -279,7 +310,7 @@ final class ImageEditor
         }
 
         $clear = imagecolorallocatealpha($img, 0, 0, 0, 127);
-        $drop = $edgesOnly ? "\2" : "\1";
+        $drop = ($edgesOnly || $fromSeed) ? "\2" : "\1";
         for ($y = 0; $y < $h; $y++) {
             $row = $y * $w;
             for ($x = 0; $x < $w; $x++) {

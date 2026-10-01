@@ -25,6 +25,7 @@
         clean: 'Clean drawing',
         cutout: 'Remove background',
         colorkey: 'Remove colour',
+        wand: 'Magic wand',
     };
     const busyText = {
         rotate_left: 'Rotating…',
@@ -32,6 +33,7 @@
         grayscale: 'Converting to black and white…',
         clean: 'Cleaning drawing…',
         colorkey: 'Removing the colour…',
+        wand: 'Removing the area you clicked…',
         cutout: 'Removing the background…',
         export: 'Preparing download…',
     };
@@ -45,7 +47,7 @@
     const controlSelector = '.block button:not(#theme), .block select, .block textarea, .block input:not(#file)';
 
     // Each step is { label, blob, url }; pos points at the step on screen.
-    const state = { steps: [], pos: -1, name: 'picture', busy: false, keyManual: false };
+    const state = { steps: [], pos: -1, name: 'picture', busy: false, keyManual: false, wandAt: null };
     const current = () => state.steps[state.pos];
     const slidersMoved = () => brightness.value !== '100' || contrast.value !== '100' || sharpness.value !== '0';
 
@@ -155,28 +157,36 @@
 
     function stopPicking() {
         $('pickColor').setAttribute('aria-pressed', 'false');
+        $('wand').setAttribute('aria-pressed', 'false');
         Overlay.setPicker(null);
     }
 
-    function startPicking() {
-        $('pickColor').setAttribute('aria-pressed', 'true');
-        status('Click the colour to remove on the picture. Esc cancels.');
+    function sampleHex(fx, fy) {
+        const { w, h, data } = pixels();
+        const cx = Math.min(w - 1, Math.floor(fx * w));
+        const cy = Math.min(h - 1, Math.floor(fy * h));
+        const i = (cy * w + cx) * 4;
+        return hex(data[i], data[i + 1], data[i + 2]);
+    }
+
+    function startPicking(mode) {
+        $('pickColor').setAttribute('aria-pressed', mode === 'pick' ? 'true' : 'false');
+        $('wand').setAttribute('aria-pressed', mode === 'wand' ? 'true' : 'false');
+        status(mode === 'wand'
+            ? 'Click the area to remove. Esc cancels.'
+            : 'Click the colour to remove on the picture. Esc cancels.');
         Overlay.setPicker((fx, fy) => {
-            const { w, h, data } = pixels();
-            const cx = Math.min(w - 1, Math.floor(fx * w));
-            const cy = Math.min(h - 1, Math.floor(fy * h));
-            let r = 0, g = 0, b = 0, n = 0;
-            for (let y = Math.max(0, cy - 1); y <= Math.min(h - 1, cy + 1); y++) {
-                for (let x = Math.max(0, cx - 1); x <= Math.min(w - 1, cx + 1); x++) {
-                    const i = (y * w + x) * 4;
-                    r += data[i]; g += data[i + 1]; b += data[i + 2]; n++;
-                }
-            }
-            const value = hex(r / n, g / n, b / n);
-            setKeyColor(value, `Picked ${value}. Press Remove this colour.`);
+            const value = sampleHex(fx, fy);
+            state.wandAt = { x: fx, y: fy };
             state.keyManual = true;
             stopPicking();
-            status(`Picked ${value}.`);
+            if (mode === 'wand') {
+                setKeyColor(value, `Removing the ${value} area you clicked.`);
+                send('wand');
+            } else {
+                setKeyColor(value, `Picked ${value}. Press Remove this colour, or use Magic wand to remove only that spot.`);
+                status(`Picked ${value}.`);
+            }
         });
     }
 
@@ -295,10 +305,16 @@
             body.append('icon_bg', $('iconBg').value);
             body.append('icon_padding', $('iconPadding').value);
         }
+        if (op === 'colorkey' || op === 'cutout' || op === 'wand') {
+            body.append('key_tolerance', $('keyTolerance').value);
+        }
         if (op === 'colorkey') {
             body.append('key_color', $('keyColor').value);
-            body.append('key_tolerance', $('keyTolerance').value);
             body.append('key_edges', $('keyEdges').checked ? '1' : '0');
+        }
+        if (op === 'wand') {
+            body.append('key_x', state.wandAt.x);
+            body.append('key_y', state.wandAt.y);
         }
 
         const source = state.steps[0];
@@ -368,7 +384,15 @@
     $('autoColor').addEventListener('click', () => autoColor(true));
     $('pickColor').addEventListener('click', () => {
         if ($('pickColor').getAttribute('aria-pressed') === 'true') stopPicking();
-        else startPicking();
+        else startPicking('pick');
+    });
+    $('wand').addEventListener('click', () => {
+        if ($('wand').getAttribute('aria-pressed') === 'true') {
+            stopPicking();
+            status('Magic wand cancelled.');
+        } else {
+            startPicking('wand');
+        }
     });
     $('resetAdjust').addEventListener('click', resetSliders);
     document.querySelectorAll('.tool').forEach((b) => b.addEventListener('click', () => send(b.dataset.op)));
@@ -380,7 +404,7 @@
     syncFormat();
 
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && $('pickColor').getAttribute('aria-pressed') === 'true') {
+        if (e.key === 'Escape' && ($('pickColor').getAttribute('aria-pressed') === 'true' || $('wand').getAttribute('aria-pressed') === 'true')) {
             stopPicking();
             status('Colour picking cancelled.');
             return;

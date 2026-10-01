@@ -112,7 +112,7 @@ $fonts = ['Plus Jakarta Sans', 'Oswald', 'Playfair Display', 'Caveat', 'Arial', 
                 <button type="button" class="btn tool" data-op="rotate_right" disabled><svg><use href="#i-rotr"/></svg>Rotate right</button>
                 <button type="button" class="btn tool wide-cell" data-op="grayscale" disabled title="Shades of grey. Transparency stays."><svg><use href="#i-bw"/></svg>Black and white</button>
                 <button type="button" class="btn tool wide-cell" data-op="clean" disabled title="Scans and photos of plans: white paper, dark lines"><svg><use href="#i-pencil"/></svg>Clean drawing</button>
-                <button type="button" class="btn tool magic" data-op="cutout" disabled title="Makes the colour around the edges transparent"><svg><use href="#i-scissors"/></svg>Remove background</button>
+                <button type="button" class="btn tool magic" data-op="cutout" disabled title="Clears the colour around the edges. Uses the tolerance slider below."><svg><use href="#i-scissors"/></svg>Remove background</button>
             </div>
 
             <div class="subpanel">
@@ -129,8 +129,9 @@ $fonts = ['Plus Jakarta Sans', 'Oswald', 'Playfair Display', 'Caveat', 'Arial', 
                     <input type="range" id="keyTolerance" min="0" max="100" value="20" aria-label="Colour tolerance" disabled>
                 </label>
                 <label class="check"><input type="checkbox" id="keyEdges" checked disabled> Only areas touching the picture edges</label>
+                <button type="button" class="btn magic" id="wand" disabled title="Click a spot on the picture. Only the connected area of that colour is removed."><svg><use href="#i-wand"/></svg>Magic wand</button>
                 <button type="button" class="btn tool magic" data-op="colorkey" disabled><svg><use href="#i-dropper"/></svg>Remove this colour</button>
-                <p class="meta" id="keyHint">The colour is detected from the picture edges. Use Pick to click a colour on the picture instead.</p>
+                <p class="meta" id="keyHint">Magic wand removes the area you click. Remove background clears the colour around the edges. Raise tolerance if a fringe of that colour remains.</p>
             </div>
         </section>
 

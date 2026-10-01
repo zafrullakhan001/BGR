@@ -54,7 +54,7 @@ if (!$size || $size[0] * $size[1] > MAX_PIXELS) {
 
 $op = (string) ($_POST['op'] ?? '');
 $format = $op === 'export' ? (string) ($_POST['format'] ?? '') : 'png';
-if (!in_array($op, ['rotate_left', 'rotate_right', 'grayscale', 'clean', 'cutout', 'colorkey', 'export'], true)
+if (!in_array($op, ['rotate_left', 'rotate_right', 'grayscale', 'clean', 'cutout', 'colorkey', 'wand', 'export'], true)
     || !in_array($format, ['png', 'jpg', 'webp', 'gif', 'bmp', 'ico', ...IconPack::PACKS], true)) {
     fail(400, 'Unknown action.');
 }
@@ -69,6 +69,11 @@ $iconPadding = max(0, min(40, (int) ($_POST['icon_padding'] ?? 0))) / 100;
 $keyColor = preg_match('/^#[0-9a-f]{6}$/i', (string) ($_POST['key_color'] ?? '')) ? strtolower($_POST['key_color']) : '#ffffff';
 $keyTolerance = max(0, min(100, (int) ($_POST['key_tolerance'] ?? 20)));
 $keyEdges = ($_POST['key_edges'] ?? '1') === '1' ? '1' : '0';
+$keyX = is_numeric($_POST['key_x'] ?? null) ? (float) $_POST['key_x'] : -1.0;
+$keyY = is_numeric($_POST['key_y'] ?? null) ? (float) $_POST['key_y'] : -1.0;
+if ($op === 'wand' && ($keyX < 0 || $keyX > 1 || $keyY < 0 || $keyY > 1)) {
+    fail(400, 'Click the area to remove.');
+}
 
 if (!is_dir(TMP_DIR)) {
     mkdir(TMP_DIR, 0700, true);
@@ -85,8 +90,9 @@ try {
         'rotate_right' => $editor->rotate(-90),
         'grayscale' => $editor->grayscale(),
         'clean' => $editor->cleanDrawing(),
-        'cutout' => $editor->removeEdgeBackground(),
+        'cutout' => $editor->removeEdgeBackground($keyTolerance),
         'colorkey' => $editor->removeColor($keyColor, $keyTolerance, $keyEdges === '1'),
+        'wand' => $editor->removeWand($keyX, $keyY, $keyTolerance),
         'export' => $isIcon ? $editor : $editor->resize($width),
     };
 
