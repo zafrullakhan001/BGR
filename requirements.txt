@@ -1,5 +1,0 @@
-rembg[cpu]
-pillow
-opencv-python-headless
-numpy
-ezdxf

@@ -97,7 +97,7 @@ $fonts = ['Plus Jakarta Sans', 'Oswald', 'Playfair Display', 'Caveat', 'Arial', 
                 <button type="button" class="btn tool" data-op="rotate_left" disabled><svg><use href="#i-rotl"/></svg>Rotate left</button>
                 <button type="button" class="btn tool" data-op="rotate_right" disabled><svg><use href="#i-rotr"/></svg>Rotate right</button>
                 <button type="button" class="btn tool wide-cell" data-op="clean" disabled title="Scans and photos of plans: white paper, dark lines"><svg><use href="#i-pencil"/></svg>Clean drawing</button>
-                <button type="button" class="btn tool magic" data-op="cutout" disabled title="Photos of objects and people: transparent background"><svg><use href="#i-scissors"/></svg>Remove background</button>
+                <button type="button" class="btn tool magic" data-op="cutout" disabled title="Makes the colour around the edges transparent"><svg><use href="#i-scissors"/></svg>Remove background</button>
             </div>
 
             <div class="subpanel">
@@ -212,10 +212,6 @@ $fonts = ['Plus Jakarta Sans', 'Oswald', 'Playfair Display', 'Caveat', 'Arial', 
                             <option value="gif">GIF</option>
                             <option value="bmp">BMP</option>
                             <option value="ico">ICO (favicon file)</option>
-                        </optgroup>
-                        <optgroup label="Vectors for Visio and CAD">
-                            <option value="svg">SVG vector</option>
-                            <option value="dxf">DXF vector</option>
                         </optgroup>
                         <optgroup label="Icon packs (ZIP)">
                             <option value="favicon">Website favicon set</option>

@@ -4,8 +4,6 @@ declare(strict_types=1);
 require __DIR__ . '/lib/ImageEditor.php';
 require __DIR__ . '/lib/IconPack.php';
 
-// Project venv, because Apache runs as a service and cannot see per-user pip packages.
-const PYTHON_BIN = __DIR__ . (PHP_OS_FAMILY === 'Windows' ? '/tools/venv/Scripts/python.exe' : '/tools/venv/bin/python');
 const MAX_BYTES = 30 * 1024 * 1024;
 const MAX_PIXELS = 40_000_000;
 const TMP_DIR = __DIR__ . '/storage/tmp';
@@ -21,28 +19,6 @@ function fail(int $code, string $message): never
     header('Content-Type: application/json');
     echo json_encode(['error' => $message]);
     exit;
-}
-
-/** Runs tools/edit.py without a shell; returns the error text, or null on success. */
-function runPython(string $mode, string $in, string $out, string $log, array $extra = []): ?string
-{
-    $env = getenv() + ['U2NET_HOME' => __DIR__ . '/storage/models'];
-    $null = PHP_OS_FAMILY === 'Windows' ? 'NUL' : '/dev/null';
-    $proc = @proc_open(
-        [PYTHON_BIN, __DIR__ . '/tools/edit.py', $mode, $in, $out, ...$extra],
-        [1 => ['file', $null, 'w'], 2 => ['file', $log, 'w']],
-        $pipes,
-        null,
-        $env
-    );
-    if (!is_resource($proc)) {
-        return 'Python could not be started. Create tools/venv and install requirements.txt into it.';
-    }
-    if (proc_close($proc) === 0 && is_file($out)) {
-        return null;
-    }
-    $lines = array_filter(array_map('trim', explode("\n", (string) @file_get_contents($log))));
-    return $lines ? (string) end($lines) : 'The Python step failed.';
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -71,7 +47,7 @@ if (!$size || $size[0] * $size[1] > MAX_PIXELS) {
 $op = (string) ($_POST['op'] ?? '');
 $format = $op === 'export' ? (string) ($_POST['format'] ?? '') : 'png';
 if (!in_array($op, ['rotate_left', 'rotate_right', 'clean', 'cutout', 'colorkey', 'export'], true)
-    || !in_array($format, ['png', 'jpg', 'webp', 'gif', 'bmp', 'ico', 'svg', 'dxf', ...IconPack::PACKS], true)) {
+    || !in_array($format, ['png', 'jpg', 'webp', 'gif', 'bmp', 'ico', ...IconPack::PACKS], true)) {
     fail(400, 'Unknown action.');
 }
 $isIcon = $format === 'ico' || in_array($format, IconPack::PACKS, true);
@@ -89,14 +65,9 @@ $keyEdges = ($_POST['key_edges'] ?? '1') === '1' ? '1' : '0';
 if (!is_dir(TMP_DIR)) {
     mkdir(TMP_DIR, 0700, true);
 }
-$base = TMP_DIR . '/' . bin2hex(random_bytes(16));
-$work = $base . '.png';
-$out = $base . '.' . $ext;
-$log = $base . '.log';
-register_shutdown_function(static function () use ($work, $out, $log): void {
-    foreach ([$work, $out, $log] as $path) {
-        @unlink($path);
-    }
+$out = TMP_DIR . '/' . bin2hex(random_bytes(16)) . '.' . $ext;
+register_shutdown_function(static function () use ($out): void {
+    @unlink($out);
 });
 
 try {
@@ -104,14 +75,10 @@ try {
     match ($op) {
         'rotate_left' => $editor->rotate(90),
         'rotate_right' => $editor->rotate(-90),
+        'clean' => $editor->cleanDrawing(),
+        'cutout' => $editor->removeEdgeBackground(),
+        'colorkey' => $editor->removeColor($keyColor, $keyTolerance, $keyEdges === '1'),
         'export' => $isIcon ? $editor : $editor->resize($width),
-        default => $editor,
-    };
-
-    $pythonMode = match (true) {
-        $op === 'cutout', $op === 'clean', $op === 'colorkey' => $op,
-        $format === 'svg', $format === 'dxf' => $format,
-        default => null,
     };
 
     if ($isIcon) {
@@ -119,21 +86,12 @@ try {
         $format === 'ico'
             ? file_put_contents($out, $pack->ico([16, 32, 48, 64, 128, 256]))
             : $pack->zip($format, $out);
-    } elseif ($pythonMode === null) {
-        $editor->save($out, $format);
     } else {
-        $editor->save($work, 'png');
-        unset($editor);
-        $extra = $pythonMode === 'colorkey' ? [$keyColor, (string) $keyTolerance, $keyEdges] : [];
-        $error = runPython($pythonMode, $work, $out, $log, $extra);
-        if ($error !== null) {
-            throw new RuntimeException($error);
-        }
+        $editor->save($out, $format);
     }
 
     $types = ['png' => 'image/png', 'jpg' => 'image/jpeg', 'webp' => 'image/webp', 'gif' => 'image/gif',
-        'bmp' => 'image/bmp', 'ico' => 'image/x-icon', 'svg' => 'image/svg+xml', 'dxf' => 'application/dxf',
-        'zip' => 'application/zip'];
+        'bmp' => 'image/bmp', 'ico' => 'image/x-icon', 'zip' => 'application/zip'];
     header('Content-Type: ' . $types[$ext]);
     header('Content-Length: ' . filesize($out));
     header('Content-Disposition: attachment; filename="picture.' . $ext . '"');

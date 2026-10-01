@@ -12,8 +12,6 @@
         gif: 'Transparent areas become white. 256 colours.',
         bmp: 'Transparent areas become white.',
         ico: 'One favicon.ico holding 16 to 256 px sizes. Keeps transparency.',
-        svg: 'Traces dark lines into shapes. Run Clean drawing first on scans and photos of plans.',
-        dxf: 'Traces dark lines into closed polylines. Run Clean drawing first on scans and photos of plans.',
         favicon: 'favicon.ico, PNG favicons, Apple touch icon, web manifest, and the HTML tags to paste into your page head.',
         pwa: 'Standard and maskable 192 and 512 px icons, plus a manifest.webmanifest ready to edit.',
         android: 'Launcher icons for every screen density, round and adaptive layers, and the 512 px Play Store icon. Copy res/ into your app.',
@@ -32,7 +30,7 @@
         rotate_right: 'Rotating…',
         clean: 'Cleaning drawing…',
         colorkey: 'Removing the colour…',
-        cutout: 'Removing background. The first run can take a minute…',
+        cutout: 'Removing the background…',
         export: 'Preparing download…',
     };
 

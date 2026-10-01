@@ -159,6 +159,141 @@ final class ImageEditor
         return $method === null ? $this : $this->{$method}();
     }
 
+    /** Lifts a scan or photo of a plan so the paper is white and the lines stay dark. */
+    public function cleanDrawing(): self
+    {
+        $w = imagesx($this->img);
+        $h = imagesy($this->img);
+        $sample = imagescale($this->img, min($w, 200), -1, IMG_BILINEAR_FIXED);
+        if (!$sample) {
+            return $this;
+        }
+        $levels = [];
+        $sw = imagesx($sample);
+        $sh = imagesy($sample);
+        for ($y = 0; $y < $sh; $y++) {
+            for ($x = 0; $x < $sw; $x++) {
+                $levels[] = $this->luma(imagecolorat($sample, $x, $y));
+            }
+        }
+        unset($sample);
+        sort($levels);
+        $last = count($levels) - 1;
+        $black = $levels[(int) round($last * 0.02)];
+        $white = $levels[(int) round($last * 0.92)];
+        if ($white - $black < 12) {
+            return $this;
+        }
+
+        $this->keepAlpha();
+        $span = $white - $black;
+        for ($y = 0; $y < $h; $y++) {
+            for ($x = 0; $x < $w; $x++) {
+                $c = imagecolorat($this->img, $x, $y);
+                if ((($c >> 24) & 0x7F) > 100) {
+                    continue;
+                }
+                $v = intdiv(($this->luma($c) - $black) * 255, $span);
+                $v = max(0, min(255, $v));
+                if ($v > 245) {
+                    $v = 255;
+                } elseif ($v < 10) {
+                    $v = 0;
+                }
+                imagesetpixel($this->img, $x, $y, ($v << 16) | ($v << 8) | $v);
+            }
+        }
+        return $this;
+    }
+
+    /** Drops the colour that dominates the edges. Tolerance is 0–100. */
+    public function removeEdgeBackground(int $tolerance = 24): self
+    {
+        $hex = $this->dominantEdgeColor();
+        return $hex === null ? $this : $this->removeColor($hex, $tolerance, true);
+    }
+
+    /** Makes matching pixels transparent. $edgesOnly keeps enclosed areas of that colour. */
+    public function removeColor(string $hex, int $tolerance, bool $edgesOnly): self
+    {
+        $rgb = sscanf($hex, '#%02x%02x%02x');
+        if (!is_array($rgb) || count($rgb) !== 3) {
+            throw new RuntimeException('The colour is not valid.');
+        }
+        [$kr, $kg, $kb] = $rgb;
+        $maxDist2 = (int) round(($tolerance / 100) ** 2 * (255 ** 2 * 3));
+        $w = imagesx($this->img);
+        $h = imagesy($this->img);
+        $n = $w * $h;
+        if ($w < 1 || $h < 1) {
+            return $this;
+        }
+
+        // 0 = keep, 1 = colour match, 2 = match that touches the picture edge.
+        $state = str_repeat("\0", $n);
+        for ($y = 0; $y < $h; $y++) {
+            $row = $y * $w;
+            for ($x = 0; $x < $w; $x++) {
+                if ($this->nearKey(imagecolorat($this->img, $x, $y), $kr, $kg, $kb, $maxDist2)) {
+                    $state[$row + $x] = "\1";
+                }
+            }
+        }
+
+        if ($edgesOnly) {
+            $queue = [];
+            $head = 0;
+            $mark = static function (int $i) use (&$state, &$queue): void {
+                if ($state[$i] === "\1") {
+                    $state[$i] = "\2";
+                    $queue[] = $i;
+                }
+            };
+            for ($x = 0; $x < $w; $x++) {
+                $mark($x);
+                $mark(($h - 1) * $w + $x);
+            }
+            for ($y = 1; $y < $h - 1; $y++) {
+                $mark($y * $w);
+                $mark($y * $w + $w - 1);
+            }
+            while ($head < count($queue)) {
+                if ($head >= 65536) {
+                    $queue = array_slice($queue, $head);
+                    $head = 0;
+                }
+                $i = $queue[$head++];
+                $x = $i % $w;
+                $y = intdiv($i, $w);
+                if ($x > 0) {
+                    $mark($i - 1);
+                }
+                if ($x + 1 < $w) {
+                    $mark($i + 1);
+                }
+                if ($y > 0) {
+                    $mark($i - $w);
+                }
+                if ($y + 1 < $h) {
+                    $mark($i + $w);
+                }
+            }
+        }
+
+        $this->keepAlpha();
+        $clear = imagecolorallocatealpha($this->img, 0, 0, 0, 127);
+        $drop = $edgesOnly ? "\2" : "\1";
+        for ($y = 0; $y < $h; $y++) {
+            $row = $y * $w;
+            for ($x = 0; $x < $w; $x++) {
+                if ($state[$row + $x] === $drop) {
+                    imagesetpixel($this->img, $x, $y, $clear);
+                }
+            }
+        }
+        return $this;
+    }
+
     public function image(): GdImage
     {
         return $this->img;
@@ -218,6 +353,69 @@ final class ImageEditor
         return abs((($c >> 16) & 0xFF) - $bg[0]) <= $tol
             && abs((($c >> 8) & 0xFF) - $bg[1]) <= $tol
             && abs(($c & 0xFF) - $bg[2]) <= $tol;
+    }
+
+    private function luma(int $c): int
+    {
+        return intdiv(299 * (($c >> 16) & 0xFF) + 587 * (($c >> 8) & 0xFF) + 114 * ($c & 0xFF), 1000);
+    }
+
+    /** Euclidean RGB distance, with already-transparent pixels counting as a match. */
+    private function nearKey(int $c, int $kr, int $kg, int $kb, int $maxDist2): bool
+    {
+        if ((($c >> 24) & 0x7F) > 100) {
+            return true;
+        }
+        $dr = (($c >> 16) & 0xFF) - $kr;
+        $dg = (($c >> 8) & 0xFF) - $kg;
+        $db = ($c & 0xFF) - $kb;
+        return $dr * $dr + $dg * $dg + $db * $db <= $maxDist2;
+    }
+
+    /** Most common opaque colour along the edges, or null when the edges are clear. */
+    private function dominantEdgeColor(): ?string
+    {
+        $w = imagesx($this->img);
+        $h = imagesy($this->img);
+        $buckets = [];
+        $visit = function (int $x, int $y) use (&$buckets): void {
+            $c = imagecolorat($this->img, $x, $y);
+            if ((($c >> 24) & 0x7F) > 100) {
+                return;
+            }
+            $r = ($c >> 16) & 0xFF;
+            $g = ($c >> 8) & 0xFF;
+            $b = $c & 0xFF;
+            $k = ($r >> 4) << 8 | ($g >> 4) << 4 | ($b >> 4);
+            $bucket = $buckets[$k] ?? ['n' => 0, 'r' => 0, 'g' => 0, 'b' => 0];
+            $bucket['n']++;
+            $bucket['r'] += $r;
+            $bucket['g'] += $g;
+            $bucket['b'] += $b;
+            $buckets[$k] = $bucket;
+        };
+        for ($x = 0; $x < $w; $x++) {
+            $visit($x, 0);
+            if ($h > 1) {
+                $visit($x, $h - 1);
+            }
+        }
+        for ($y = 1; $y < $h - 1; $y++) {
+            $visit(0, $y);
+            if ($w > 1) {
+                $visit($w - 1, $y);
+            }
+        }
+        if ($buckets === []) {
+            return null;
+        }
+        $top = $buckets[array_key_first($buckets)];
+        foreach ($buckets as $bucket) {
+            if ($bucket['n'] > $top['n']) {
+                $top = $bucket;
+            }
+        }
+        return sprintf('#%02x%02x%02x', intdiv($top['r'], $top['n']), intdiv($top['g'], $top['n']), intdiv($top['b'], $top['n']));
     }
 
     private function flattened(): GdImage
