@@ -1,0 +1,12 @@
+# Python environment and bytecode
+venv/
+__pycache__/
+*.py[cod]
+
+# Downloaded model weights and upload scratch space
+storage/models/
+storage/tmp/
+
+# OS junk
+Thumbs.db
+Desktop.ini
