@@ -12,6 +12,9 @@ storage/backup/
 storage/update.lock
 BUILD_INFO.json
 
+# Unused sample pictures
+_fixtures/
+
 # OS junk
 Thumbs.db
 Desktop.ini
