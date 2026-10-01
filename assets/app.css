@@ -551,7 +551,7 @@ h3 { margin: 0; font-size: 0.88rem; font-weight: 600; }
 }
 .view { transform-origin: center; will-change: transform; }
 .stage { overflow: hidden; }
-.stage.zoomed .view canvas { cursor: grab; }
+.stage.zoomed .view canvas, .stage.pan-mode .view canvas { cursor: grab; }
 .stage.panning .view canvas { cursor: grabbing; }
 
 .zoom-bar {
@@ -562,7 +562,7 @@ h3 { margin: 0; font-size: 0.88rem; font-weight: 600; }
     display: flex;
     align-items: center;
     gap: 12px;
-    width: min(360px, calc(100% - 32px));
+    width: min(460px, calc(100% - 32px));
     padding: 8px 10px 8px 16px;
     background: var(--panel-solid);
     border: 1px solid var(--line);

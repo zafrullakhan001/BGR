@@ -316,7 +316,10 @@ window.Overlay = (() => {
 
     document.querySelectorAll('#place button').forEach((b) => b.addEventListener('click', () => place(+b.dataset.x, +b.dataset.y)));
 
+    const panning = () => document.getElementById('stage').classList.contains('pan-mode');
+
     canvas.addEventListener('pointerdown', (e) => {
+        if (panning()) return;
         if (picker) {
             const r = canvas.getBoundingClientRect();
             picker((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
@@ -342,6 +345,10 @@ window.Overlay = (() => {
         e.preventDefault();
     });
     canvas.addEventListener('pointermove', (e) => {
+        if (panning()) {
+            canvas.style.cursor = '';
+            return;
+        }
         if (picker) return;
         const [px, py] = pointer(e);
         if (!drag) {

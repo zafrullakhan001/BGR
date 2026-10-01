@@ -20,6 +20,7 @@
         slider.value = Math.round(s * 100);
         out.value = Math.round(s * 100) + '%';
         stage.classList.toggle('zoomed', s > 1);
+        stage.classList.toggle('pan-mode', $('zoomPan').getAttribute('aria-pressed') === 'true');
     }
 
     /** Zooms to scale n, keeping the screen point (px, py) over the same spot of the picture. */
@@ -33,7 +34,6 @@
         tx = px - cx - (px - cx - tx) * n / s;
         ty = py - cy - (py - cy - ty) * n / s;
         s = n;
-        if (s <= 1) tx = ty = 0;
         apply();
     }
 
@@ -44,6 +44,11 @@
     }
 
     slider.addEventListener('input', () => zoomTo(slider.value / 100));
+    $('zoomPan').addEventListener('click', () => {
+        const on = $('zoomPan').getAttribute('aria-pressed') !== 'true';
+        $('zoomPan').setAttribute('aria-pressed', on ? 'true' : 'false');
+        apply();
+    });
     $('zoomReset').addEventListener('click', reset);
 
     view.addEventListener('wheel', (e) => {
@@ -53,7 +58,8 @@
 
     // Runs after overlay.js; it calls preventDefault when the press grabbed a layer or picked a colour.
     view.addEventListener('pointerdown', (e) => {
-        if (e.defaultPrevented || s <= 1 || e.button !== 0) return;
+        if (e.defaultPrevented || e.button !== 0) return;
+        if (!stage.classList.contains('pan-mode') && s <= 1) return;
         pan = { x: e.clientX - tx, y: e.clientY - ty, id: e.pointerId };
         view.setPointerCapture(e.pointerId);
         stage.classList.add('panning');

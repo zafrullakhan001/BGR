@@ -54,7 +54,7 @@ if (!$size || $size[0] * $size[1] > MAX_PIXELS) {
 
 $op = (string) ($_POST['op'] ?? '');
 $format = $op === 'export' ? (string) ($_POST['format'] ?? '') : 'png';
-if (!in_array($op, ['rotate_left', 'rotate_right', 'clean', 'cutout', 'colorkey', 'export'], true)
+if (!in_array($op, ['rotate_left', 'rotate_right', 'grayscale', 'clean', 'cutout', 'colorkey', 'export'], true)
     || !in_array($format, ['png', 'jpg', 'webp', 'gif', 'bmp', 'ico', ...IconPack::PACKS], true)) {
     fail(400, 'Unknown action.');
 }
@@ -83,6 +83,7 @@ try {
     match ($op) {
         'rotate_left' => $editor->rotate(90),
         'rotate_right' => $editor->rotate(-90),
+        'grayscale' => $editor->grayscale(),
         'clean' => $editor->cleanDrawing(),
         'cutout' => $editor->removeEdgeBackground(),
         'colorkey' => $editor->removeColor($keyColor, $keyTolerance, $keyEdges === '1'),

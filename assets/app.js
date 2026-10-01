@@ -21,6 +21,7 @@
     const labels = {
         rotate_left: 'Rotate left',
         rotate_right: 'Rotate right',
+        grayscale: 'Black and white',
         clean: 'Clean drawing',
         cutout: 'Remove background',
         colorkey: 'Remove colour',
@@ -28,6 +29,7 @@
     const busyText = {
         rotate_left: 'Rotating…',
         rotate_right: 'Rotating…',
+        grayscale: 'Converting to black and white…',
         clean: 'Cleaning drawing…',
         colorkey: 'Removing the colour…',
         cutout: 'Removing the background…',

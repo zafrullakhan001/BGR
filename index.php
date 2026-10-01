@@ -42,6 +42,8 @@ $fonts = ['Plus Jakarta Sans', 'Oswald', 'Playfair Display', 'Caveat', 'Arial', 
         <symbol id="i-wand" viewBox="0 0 24 24"><path d="M15 4V2M15 10V8M11 6h2M17 6h2M3 21 15 9"/></symbol>
         <symbol id="i-rotl" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol>
         <symbol id="i-rotr" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></symbol>
+        <symbol id="i-bw" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16"/></symbol>
+        <symbol id="i-pan" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/><path d="m8 7 4-4 4 4M8 17l4 4 4-4M7 8 3 12l4 4M17 8l4 4-4 4"/></symbol>
         <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M3 21l3.5-1 11-11-2.5-2.5-11 11z"/><path d="M14 6l2.5 2.5"/></symbol>
         <symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/></symbol>
         <symbol id="i-type" viewBox="0 0 24 24"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></symbol>
@@ -109,6 +111,7 @@ $fonts = ['Plus Jakarta Sans', 'Oswald', 'Playfair Display', 'Caveat', 'Arial', 
             <div class="grid2">
                 <button type="button" class="btn tool" data-op="rotate_left" disabled><svg><use href="#i-rotl"/></svg>Rotate left</button>
                 <button type="button" class="btn tool" data-op="rotate_right" disabled><svg><use href="#i-rotr"/></svg>Rotate right</button>
+                <button type="button" class="btn tool wide-cell" data-op="grayscale" disabled title="Shades of grey. Transparency stays."><svg><use href="#i-bw"/></svg>Black and white</button>
                 <button type="button" class="btn tool wide-cell" data-op="clean" disabled title="Scans and photos of plans: white paper, dark lines"><svg><use href="#i-pencil"/></svg>Clean drawing</button>
                 <button type="button" class="btn tool magic" data-op="cutout" disabled title="Makes the colour around the edges transparent"><svg><use href="#i-scissors"/></svg>Remove background</button>
             </div>
@@ -275,6 +278,7 @@ $fonts = ['Plus Jakarta Sans', 'Oswald', 'Playfair Display', 'Caveat', 'Arial', 
                 <span>Zoom <output id="zoomOut">100%</output></span>
                 <input type="range" id="zoom" min="50" max="400" step="10" value="100" aria-label="Zoom">
             </label>
+            <button type="button" class="btn" id="zoomPan" aria-pressed="false" title="Drag the picture to move it"><svg><use href="#i-pan"/></svg>Pan</button>
             <button type="button" class="btn" id="zoomReset" title="Back to 100% and centred">Fit</button>
         </div>
     </main>
